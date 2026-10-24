@@ -1,0 +1,57 @@
+name: Build web image (time tracking)
+
+on:
+  push:
+    branches: [feature/time-tracking-v1.4.2]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Unit test duration parser
+        run: node --experimental-strip-types apps/web/helpers/worklog.test.ts
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile.web
+          tags: plane-frontend:v142
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check English translations are bundled
+        run: |
+          docker run --rm --entrypoint sh plane-frontend:v142 -c \
+            'grep -rl "New to Plane?" /usr/share/nginx/html >/dev/null' \
+            || { echo "::error::English translations are missing from the web bundle"; exit 1; }
+
+      - name: Check time tracking UI is bundled
+        run: |
+          docker run --rm --entrypoint sh plane-frontend:v142 -c \
+            'grep -rl "work-item-worklog-trigger" /usr/share/nginx/html >/dev/null' \
+            || { echo "::error::Time tracking component is missing from the web bundle"; exit 1; }
+
+      - name: Export image
+        run: docker save plane-frontend:v142 | gzip -9 > plane-frontend-v142.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plane-frontend-v142
+          path: plane-frontend-v142.tar.gz
+          retention-days: 7
+          compression-level: 0

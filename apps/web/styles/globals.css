@@ -198,3 +198,49 @@
     0 0 4px --alpha(var(--background-color-accent-primary) / 40%) !important;
   will-change: transform, opacity;
 }
+
+/* Time tracking (work item sidebar) */
+@keyframes worklogIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes worklogPop {
+  from {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.worklog-in {
+  animation: worklogIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.worklog-pop {
+  animation: worklogPop 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: top left;
+}
+
+.worklog-bar {
+  transition: width 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .worklog-in,
+  .worklog-pop {
+    animation: none;
+  }
+  .worklog-bar {
+    transition: none;
+  }
+}
