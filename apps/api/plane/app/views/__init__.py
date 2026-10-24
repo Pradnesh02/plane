@@ -143,6 +143,7 @@ from .issue.comment import IssueCommentViewSet, CommentReactionViewSet
 from .issue.label import LabelViewSet, BulkCreateIssueLabelsEndpoint
 
 from .issue.link import IssueLinkViewSet
+from .issue.worklog import IssueWorkLogViewSet, ProjectWorkLogSummaryEndpoint
 
 from .issue.relation import IssueRelationViewSet
 

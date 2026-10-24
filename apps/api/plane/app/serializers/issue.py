@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+# Python imports
+from datetime import timedelta
+
 # Django imports
 from django.utils import timezone
 from django.core.validators import URLValidator
@@ -32,6 +35,7 @@ from plane.db.models import (
     Module,
     ModuleIssue,
     IssueLink,
+    IssueWorkLog,
     FileAsset,
     IssueReaction,
     CommentReaction,
@@ -1047,3 +1051,21 @@ class IssueDescriptionVersionDetailSerializer(BaseSerializer):
             "updated_by",
         ]
         read_only_fields = ["workspace", "project", "issue"]
+
+
+class IssueWorkLogSerializer(BaseSerializer):
+    logged_by_detail = UserLiteSerializer(read_only=True, source="created_by")
+
+    class Meta:
+        model = IssueWorkLog
+        fields = ["id", "issue", "project", "workspace", "duration", "description", "logged_at", "created_by",
+                  "logged_by_detail", "created_at", "updated_at"]
+        read_only_fields = ["issue", "project", "workspace", "created_by", "created_at", "updated_at"]
+
+    def validate_logged_at(self, value):
+        # The client sends its local date, which can be up to 14h ahead of the server's (UTC) date,
+        # so allow one extra day.
+        # ponytail: one-day tolerance, compare against request.user.user_timezone if exactness matters.
+        if value > timezone.localdate() + timedelta(days=1):
+            raise serializers.ValidationError("Cannot log time in the future.")
+        return value

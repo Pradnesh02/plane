@@ -37,6 +37,7 @@ from .issue import (
     IssueComment,
     IssueLabel,
     IssueLink,
+    IssueWorkLog,
     IssueMention,
     IssueReaction,
     IssueRelation,

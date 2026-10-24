@@ -19,6 +19,7 @@ import {
   PriorityOutline,
   StartDateOutline,
   StateOutline,
+  TimeTrackingOutline,
   UserOutline,
 } from "@makeplane/propel/icons";
 import { DateSelect } from "@plane/blocks/property-select";
@@ -42,6 +43,7 @@ import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/prop
 import { IssueCycleSelect } from "./cycle-select";
 import { IssueLabel } from "./label";
 import { IssueModuleSelect } from "./module-select";
+import { IssueWorkLogProperty } from "./worklog";
 import type { TIssueOperations } from "./root";
 
 type Props = {
@@ -192,6 +194,15 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
                 />
               </SidebarPropertyListItem>
             )}
+            <SidebarPropertyListItem icon={TimeTrackingOutline} label="Time logged">
+              <IssueWorkLogProperty
+                workspaceSlug={workspaceSlug}
+                projectId={projectId}
+                issueId={issueId}
+                disabled={!isEditable}
+              />
+            </SidebarPropertyListItem>
+
 
             {projectDetails?.module_view && (
               <SidebarPropertyListItem icon={ModuleOutline} label={t("common.modules")}>

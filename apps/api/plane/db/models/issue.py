@@ -384,6 +384,25 @@ class IssueLink(ProjectBaseModel):
         return f"{self.issue.name} {self.url}"
 
 
+class IssueWorkLog(ProjectBaseModel):
+    """Time spent on a work item. `created_by` is the person who logged it."""
+
+    issue = models.ForeignKey("db.Issue", on_delete=models.CASCADE, related_name="issue_worklogs")
+    duration = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(24 * 60)])  # minutes
+    description = models.TextField(blank=True, default="")
+    logged_at = models.DateField(default=timezone.localdate)
+
+    class Meta:
+        verbose_name = "Issue Work Log"
+        verbose_name_plural = "Issue Work Logs"
+        db_table = "issue_worklogs"
+        ordering = ("-logged_at", "-created_at")
+        indexes = [models.Index(fields=["project", "logged_at"], name="worklog_project_logged_at_idx")]
+
+    def __str__(self):
+        return f"{self.issue.name} {self.duration}m"
+
+
 def get_upload_path(instance, filename):
     filename = sanitize_filename(filename) or uuid4().hex
     return f"{instance.workspace.id}/{uuid4().hex}-{filename}"

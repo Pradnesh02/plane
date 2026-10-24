@@ -1,0 +1,15 @@
+# Run Plane with locally built images:
+#   backend  -> built from ../plane      (branch feature/time-tracking)
+#   frontend -> built from ../plane-v142 (branch feature/time-tracking-v1.4.2, release v1.4.2 + time tracking)
+#   docker compose -p plane --env-file plane.env -f docker-compose.yml -f docker-compose.local.yml up -d
+services:
+  web:
+    image: plane-frontend:v142
+  api:
+    image: plane-backend:local
+  worker:
+    image: plane-backend:local
+  beat-worker:
+    image: plane-backend:local
+  migrator:
+    image: plane-backend:local
