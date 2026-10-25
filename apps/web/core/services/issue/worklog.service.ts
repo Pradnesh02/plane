@@ -22,6 +22,7 @@ export type TWorkLogSummary = {
   total_minutes: number;
   by_member: { user_id: string; display_name: string; minutes: number }[];
   by_issue: { issue_id: string; name: string; sequence_id: number; minutes: number }[];
+  by_member_day: { user_id: string; logged_at: string; minutes: number }[];
 };
 
 export class WorkLogService extends APIService {
