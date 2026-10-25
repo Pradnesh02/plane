@@ -43,8 +43,8 @@ jobs:
       - name: Check time tracking UI is bundled
         run: |
           docker run --rm --entrypoint sh plane-frontend:v142 -c \
-            'grep -rl "work-item-worklog-trigger" /usr/share/nginx/html >/dev/null' \
-            || { echo "::error::Time tracking component is missing from the web bundle"; exit 1; }
+            'grep -rl "work-item-worklog-trigger" /usr/share/nginx/html >/dev/null && grep -rl "timesheet-grid" /usr/share/nginx/html >/dev/null' \
+            || { echo "::error::Time tracking UI or timesheet page is missing from the web bundle"; exit 1; }
 
       - name: Export image
         run: docker save plane-frontend:v142 | gzip -9 > plane-frontend-v142.tar.gz
