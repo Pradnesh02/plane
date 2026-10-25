@@ -112,11 +112,18 @@ class ProjectWorkLogSummaryEndpoint(BaseAPIView):
             .annotate(minutes=Sum("duration"))
             .order_by("-minutes")
         )
+        # one row per person per day: the cells of a timesheet grid
+        by_member_day = (
+            worklogs.values("logged_at", user_id=F("created_by_id"))
+            .annotate(minutes=Sum("duration"))
+            .order_by("logged_at")
+        )
         return Response(
             {
                 "total_minutes": worklogs.aggregate(total=Sum("duration"))["total"] or 0,
                 "by_member": list(by_member),
                 "by_issue": list(by_issue),
+                "by_member_day": list(by_member_day),
             },
             status=status.HTTP_200_OK,
         )

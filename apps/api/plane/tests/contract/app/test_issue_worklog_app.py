@@ -134,6 +134,9 @@ class TestWorkLogSummary:
         by_member = {str(row["user_id"]): row["minutes"] for row in response.data["by_member"]}
         assert by_member == {str(setup.owner.id): 90, str(setup.teammate.id): 45}
         assert [(str(r["issue_id"]), r["minutes"]) for r in response.data["by_issue"]] == [(str(setup.issue.id), 135)]
+        today = timezone.localdate()
+        cells = {(str(r["user_id"]), r["logged_at"]): r["minutes"] for r in response.data["by_member_day"]}
+        assert cells == {(str(setup.owner.id), today): 90, (str(setup.teammate.id), today): 45}
 
     def test_filters_by_cycle_and_date_range(self, setup):
         other = Issue.objects.create(name="Not in cycle", project=setup.project, workspace=setup.workspace)
