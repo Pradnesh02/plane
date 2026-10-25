@@ -133,7 +133,8 @@ export const IssueWorkLogProperty = observer(function IssueWorkLogProperty(props
           <span className="text-placeholder">Log time</span>
         )}
       </Popover.Button>
-      <Popover.Panel side="bottom" align="start" sideOffset={6}>
+      {/* z-30 matches Plane's other floating menus; without it the work item page layer swallows clicks */}
+      <Popover.Panel side="bottom" align="start" sideOffset={6} positionerClassName="z-30">
         <div className="worklog-pop w-80 rounded-lg border-[0.5px] border-strong bg-surface-1 p-3 shadow-raised-200">
           <div className="flex items-baseline justify-between">
             <span className="text-caption-md-medium uppercase tracking-wide text-tertiary">Time logged</span>
