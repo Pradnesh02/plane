@@ -17,6 +17,9 @@ import { SemanticSearchService } from "@/services/issue/semantic-search.service"
 
 const semanticSearchService = new SemanticSearchService();
 const EXAMPLES = ["users can't log in", "things that make the app slow", "mobile layout problems"];
+// ponytail: results within this distance of the best score count as "best matches"; tuned by hand
+// for bge-small (relevant ~0.5-0.75, noise ~0.4-0.55). Retune if the embedder model changes.
+const MATCH_WINDOW = 0.1;
 
 type Props = {
   workspaceSlug: string;
@@ -27,6 +30,7 @@ export const ProjectSemanticSearchRoot = observer(function ProjectSemanticSearch
   const { workspaceSlug, projectId } = props;
   const { getProjectById } = useProject();
   const [query, setQuery] = useState("");
+  const [showWeaker, setShowWeaker] = useState(false);
   const q = useDebounce(query.trim(), 350);
 
   const { data, error, isLoading } = useSWR(
@@ -36,7 +40,14 @@ export const ProjectSemanticSearchRoot = observer(function ProjectSemanticSearch
   );
 
   const identifier = getProjectById(projectId)?.identifier;
-  const top = data?.[0]?.score || 1;
+  const scores = (data ?? []).map((row) => row.score);
+  const best = Math.max(...scores);
+  const worst = Math.min(...scores);
+  const strong = (data ?? []).filter((row) => row.score >= best - MATCH_WINDOW);
+  const weaker = (data ?? []).slice(strong.length);
+  const visible = showWeaker ? (data ?? []) : strong;
+  // bars span weakest..strongest result so differences are visible (raw scores sit in a narrow band)
+  const barWidth = (score: number) => (best > worst ? 12 + ((score - worst) / (best - worst)) * 88 : 100);
 
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 overflow-y-auto px-page-x py-8">
@@ -52,7 +63,10 @@ export const ProjectSemanticSearchRoot = observer(function ProjectSemanticSearch
         <input
           autoFocus
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setShowWeaker(false);
+          }}
           placeholder="e.g. users can't log in"
           aria-label="Search work items by meaning"
           data-testid="semantic-search-input"
@@ -91,7 +105,7 @@ export const ProjectSemanticSearchRoot = observer(function ProjectSemanticSearch
 
       {q && !error && (data?.length ?? 0) > 0 && (
         <ul className="rounded-lg border-[0.5px] border-subtle-1" data-testid="semantic-search-results">
-          {data!.map((row, index) => (
+          {visible.map((row, index) => (
             <li
               key={`${q}-${row.id}`}
               className="worklog-in border-b border-subtle-1 last:border-b-0"
@@ -108,12 +122,26 @@ export const ProjectSemanticSearchRoot = observer(function ProjectSemanticSearch
                 <span className="h-1.5 overflow-hidden rounded-full bg-layer-3" title={`Relevance ${row.score}`}>
                   <span
                     className="worklog-bar block h-full rounded-full bg-accent-primary"
-                    style={{ width: `${Math.max(4, (row.score / top) * 100)}%` }}
+                    style={{ width: `${barWidth(row.score)}%` }}
                   />
                 </span>
               </Link>
             </li>
           ))}
+          {weaker.length > 0 && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setShowWeaker(!showWeaker)}
+                data-testid="semantic-search-toggle-weaker"
+                className="w-full px-4 py-2 text-left text-caption-md-regular text-tertiary hover:bg-layer-transparent-hover"
+              >
+                {showWeaker
+                  ? "Hide weaker matches"
+                  : `Show ${weaker.length} weaker ${weaker.length === 1 ? "match" : "matches"}`}
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </div>
