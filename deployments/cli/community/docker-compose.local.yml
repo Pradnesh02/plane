@@ -1,7 +1,7 @@
 # Run Plane with locally built images:
-#   backend  -> built from ../plane      (branch feature/time-tracking)
-#   embedder -> built from apps/embedder (semantic search model, CPU only)
-#   frontend -> built from ../plane-v142 (branch feature/time-tracking-v1.4.2, release v1.4.2 + time tracking)
+#   backend  -> apps/api on branch feature/semantic-search (time tracking + search)
+#   embedder -> apps/embedder (semantic search model, CPU only)
+#   frontend -> branch feature/semantic-search-v1.4.2 (release v1.4.2 + time tracking, timesheet, search), built by CI
 #   docker compose -p plane --env-file plane.env -f docker-compose.yml -f docker-compose.local.yml up -d
 services:
   web:

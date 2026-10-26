@@ -1,165 +1,109 @@
-<br /><br />
+# Plane + Time Tracking & Smart Search
 
-<p align="center">
-<a href="https://plane.so">
-  <img src="https://media.docs.plane.so/logo/plane_github_readme.png" alt="Plane Logo" width="400">
-</a>
-</p>
-<p align="center"><b>Modern project management for all teams</b></p>
+A fork of [Plane](https://github.com/makeplane/plane), the open-source project management tool, extended with three features Plane's community edition doesn't have:
 
-<p align="center">
-    <a href="https://plane.so/"><b>Website</b></a> •
-    <a href="https://forum.plane.so"><b>Forum</b></a> •
-    <a href="https://x.com/planepowers"><b>X</b></a> •
-    <a href="https://docs.plane.so/"><b>Documentation</b></a>
-</p>
+- **Time tracking** on every work item
+- **Project timesheets**: hours by person and day
+- **Smart search**: find work items by meaning, using an AI model that runs on your own server
 
-<p>
-    <a href="https://app.plane.so/#gh-light-mode-only" target="_blank">
-      <img
-        src="https://media.docs.plane.so/GitHub-readme/github-top.webp"
-        alt="Plane Screens"
-        width="100%"
-      />
-    </a>
-</p>
+Everything is self-hosted. No API keys, and no data leaves the server.
 
-Meet [Plane](https://plane.so/), an open-source project management tool to track issues, run ~sprints~ cycles, and manage product roadmaps without the chaos of managing the tool itself. 🧘‍♀️
+> Looking for Plane itself? See the [upstream README](https://github.com/makeplane/plane#readme).
 
-> Plane is evolving every day. Your suggestions, ideas, and reported bugs help us immensely. Do not hesitate to join in the conversation on [Forum](https://forum.plane.so) or raise a GitHub issue. We read everything and respond to most.
+![Timesheet](landing/assets/timesheet.png)
 
-## 🚀 Installation
+## Features
 
-Getting started with Plane is simple. Choose the setup that works best for you:
+### Time tracking
 
-- **Plane Cloud**
-  Sign up for a free account on [Plane Cloud](https://app.plane.so)—it's the fastest way to get up and running without worrying about infrastructure.
+A **Time logged** row in every work item's sidebar opens a popover where you log time in plain language (`1h 30m`, `1.5h`, `45m`) or with one-click quick picks. It shows the running total, a per-person share bar and the list of entries.
 
-- **Self-host Plane**
-  Prefer full control over your data and infrastructure? Install and run Plane on your own servers. Follow our detailed [deployment guides](https://developers.plane.so/self-hosting/overview) to get started.
+- Only the person who logged an entry can edit or delete it; guests can view but not log
+- 1 minute to 24 hours per entry, no future dates; "today" works across time zones
 
-| Installation methods | Docs link                                                                                                                                                                               |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Docker               | [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://developers.plane.so/self-hosting/methods/docker-compose)         |
-| Kubernetes           | [![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)](https://developers.plane.so/self-hosting/methods/kubernetes) |
+<img src="landing/assets/time-tracking.png" alt="Time tracking popover" width="420">
 
-`Instance admins` can configure instance settings with [God mode](https://developers.plane.so/self-hosting/govern/instance-admin).
+### Timesheet
 
-## 🌟 Features
+A **Timesheet** page in each project's menu: a person × day grid for any week, with cells shaded by hours, daily and weekly totals, summary stats and a per-work-item breakdown that links to each item.
 
-- **Work Items**
-  Efficiently create and manage tasks with a robust rich text editor that supports file uploads. Enhance organization and tracking by adding sub-properties and referencing related issues.
+### Smart search
 
-- **Cycles**
-  Maintain your team’s momentum with Cycles. Track progress effortlessly using burn-down charts and other insightful tools.
+A **Smart search** page in each project's menu. Describe what you're looking for in your own words; work items are ranked by meaning, so *"the app feels sluggish"* finds *"Users report slow dashboard"*. The best matches are shown first, and weaker ones sit behind a toggle.
 
-- **Modules**
-  Simplify complex projects by dividing them into smaller, manageable modules.
+![Smart search](landing/assets/smart-search.png)
 
-- **Views**
-  Customize your workflow by creating filters to display only the most relevant issues. Save and share these views with ease.
+## How it works
 
-- **Pages**
-  Capture and organize ideas using Plane Pages, complete with AI capabilities and a rich text editor. Format text, insert images, add hyperlinks, or convert your notes into actionable items.
+```mermaid
+flowchart LR
+  web[Web app<br/>React, v1.4.2] -->|REST| api[Plane API<br/>Django]
+  api --> db[(Postgres<br/>issue_worklogs<br/>issue_embeddings)]
+  api -->|POST /embed| emb[Embedder<br/>bge-small-en-v1.5, CPU]
+```
 
-- **Analytics**
-  Access real-time insights across all your Plane data. Visualize trends, remove blockers, and keep your projects moving forward.
+- **Time logs** live in a new `issue_worklogs` table (migration `0126`). The summary endpoint aggregates them by person, by work item and by person-and-day in the database.
+- **Search** uses a small separate **embedder** service (`apps/embedder`): about 40 lines of Python around [fastembed](https://github.com/qdrant/fastembed), with the 384-dimension `BAAI/bge-small-en-v1.5` model baked into the image. It's a separate container because Plane's API image is Alpine Linux, which the model's ONNX runtime doesn't support.
+- **Embeddings are cached** per work item in `issue_embeddings` (migration `0127`), keyed by a hash of the title and description. Each search embeds only items that are new or changed since the last one, so there are no background jobs to keep in sync.
+- **Ranking** is cosine similarity in Python over the project's items. Results within 0.1 of the best score count as "best matches"; that window was tuned by hand for this model.
 
-## 🛠️ Local development
+### API
 
-See [CONTRIBUTING](./CONTRIBUTING.md)
+All endpoints are under `/api/workspaces/<slug>/projects/<project_id>/`.
 
-## ⚙️ Built with
+| Method | Path | What it does |
+|---|---|---|
+| `GET` / `POST` | `issues/<issue_id>/worklogs/` | List or log time on a work item |
+| `PATCH` / `DELETE` | `issues/<issue_id>/worklogs/<id>/` | Edit or delete your own entry |
+| `GET` | `worklogs/summary/?cycle_id=&start_date=&end_date=` | Totals by member, by work item and by member-and-day |
+| `GET` | `issues/semantic-search/?q=&limit=10` | Work items ranked by meaning (`503` if the embedder is down) |
 
-[![React Router](https://img.shields.io/badge/-React%20Router-CA4245?logo=react-router&style=for-the-badge&logoColor=white)](https://reactrouter.com/)
-[![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)](https://www.djangoproject.com/)
-[![Node JS](https://img.shields.io/badge/node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white)](https://nodejs.org/en)
+## Branches
 
-## 📸 Screenshots
+| Branch | Contents |
+|---|---|
+| `feature/semantic-search` | **Start here.** Backend (time tracking + search), embedder, tests, landing page, this README |
+| `feature/semantic-search-v1.4.2` | Web app: Plane v1.4.2 + time tracking UI, Timesheet and Smart search pages, CI workflow |
+| `feature/time-tracking` / `feature/time-tracking-v1.4.2` | Earlier snapshots with time tracking only |
 
-  <p>
-    <a href="https://plane.so" target="_blank">
-      <img
-        src="https://media.docs.plane.so/GitHub-readme/github-work-items.webp"
-        alt="Plane Views"
-        width="100%"
-      />
-    </a>
-  </p>
-  <p>
-    <a href="https://plane.so" target="_blank">
-      <img
-        src="https://media.docs.plane.so/GitHub-readme/github-cycles.webp"
-        width="100%"
-      />
-    </a>
-  </p>
-  <p>
-    <a href="https://plane.so" target="_blank">
-      <img
-        src="https://media.docs.plane.so/GitHub-readme/github-modules.webp"
-        alt="Plane Cycles and Modules"
-        width="100%"
-      />
-    </a>
-  </p>
-  <p>
-    <a href="https://plane.so" target="_blank">
-      <img
-        src="https://media.docs.plane.so/GitHub-readme/github-views.webp"
-        alt="Plane Analytics"
-        width="100%"
-      />
-    </a>
-  </p>
-   <p>
-    <a href="https://plane.so" target="_blank">
-      <img
-        src="https://media.docs.plane.so/GitHub-readme/github-analytics.webp"
-        alt="Plane Pages"
-        width="100%"
-      />
-    </a>
-  </p>
-</p>
+The web app is built on Plane's tagged **v1.4.2 release**; the backend follows Plane's development branch.
 
-## 📝 Documentation
+## Run it locally
 
-Explore Plane's [product documentation](https://docs.plane.so/) and [developer documentation](https://developers.plane.so/) to learn about features, setup, and usage.
+You need Docker with Compose. From `deployments/cli/community`:
 
-## ❤️ Community
+1. **Configure.** `cp variables.env plane.env`, then set `SECRET_KEY` and `LIVE_SERVER_SECRET_KEY` to random strings. `plane.env` is gitignored.
+2. **Build the backend and embedder** (on branch `feature/semantic-search`):
+   ```bash
+   docker build -f ../../../apps/api/Dockerfile.api -t plane-backend:local ../../../apps/api
+   docker build -t plane-embedder:local ../../../apps/embedder
+   ```
+3. **Get the web image.** Download the `plane-frontend-v142` artifact from the latest [**Build web image**](https://github.com/Pradnesh02/plane/actions/workflows/build-time-tracking-web.yml) run on `feature/semantic-search-v1.4.2`, then load it:
+   ```bash
+   unzip plane-frontend-v142.zip && docker load < plane-frontend-v142.tar.gz
+   ```
+   Or build it on Linux from a checkout of that branch: `docker build -f apps/web/Dockerfile.web -t plane-frontend:v142 .` (a Windows checkout produced a bundle with missing translations, so CI builds it on Linux).
+4. **Start everything.** Migrations run automatically:
+   ```bash
+   docker compose -p plane --env-file plane.env -f docker-compose.yml -f docker-compose.local.yml up -d
+   ```
+5. Open http://localhost.
 
-Join the Plane community on [GitHub Discussions](https://github.com/orgs/makeplane/discussions) and our [Forum](https://forum.plane.so). We follow a [Code of conduct](https://github.com/makeplane/plane/blob/master/CODE_OF_CONDUCT.md) in all our community channels.
+## Tests
 
-Feel free to ask questions, report bugs, participate in discussions, share ideas, request features, or showcase your projects. We’d love to hear from you!
+- **API:** 16 contract tests, 12 for time tracking and 4 for search. The search tests swap in a fake embedder, so no model is needed. From the repo root:
+  ```bash
+  docker compose -f docker-compose-test.yml run --rm --build api-tests pytest plane/tests/contract/app/test_issue_worklog_app.py plane/tests/contract/app/test_issue_semantic_search_app.py
+  ```
+- **Duration parser:** `node --experimental-strip-types apps/web/helpers/worklog.test.ts` (on the `-v1.4.2` branch).
+- **CI:** every push to the web branches builds the image on GitHub Actions and checks that English translations, the time tracking UI, the Timesheet page and the Smart search page are all in the bundle.
 
-## 🛡️ Security
+## Limits and next steps
 
-If you discover a security vulnerability in Plane, please report it responsibly instead of opening a public issue. We take all legitimate reports seriously and will investigate them promptly. See [Security policy](https://github.com/makeplane/plane/blob/master/SECURITY.md) for more info.
-
-To disclose any security issues, please email us at security@plane.so.
-
-## 🤝 Contributing
-
-There are many ways you can contribute to Plane:
-
-- Report [bugs](https://github.com/makeplane/plane/issues/new?assignees=srinivaspendem%2Cpushya22&labels=%F0%9F%90%9Bbug&projects=&template=--bug-report.yaml&title=%5Bbug%5D%3A+) or submit [feature requests](https://github.com/makeplane/plane/issues/new?assignees=srinivaspendem%2Cpushya22&labels=%E2%9C%A8feature&projects=&template=--feature-request.yaml&title=%5Bfeature%5D%3A+).
-- Review the [documentation](https://docs.plane.so/) and submit [pull requests](https://github.com/makeplane/docs) to improve it—whether it's fixing typos or adding new content.
-- Talk or write about Plane or any other ecosystem integration and [let us know](https://forum.plane.so)!
-- Show your support by upvoting [popular feature requests](https://github.com/makeplane/plane/issues).
-
-Please read [CONTRIBUTING.md](https://github.com/makeplane/plane/blob/master/CONTRIBUTING.md) for details on the process for submitting pull requests to us.
-
-### Repo activity
-
-![Plane Repo Activity](https://repobeats.axiom.co/api/embed/2523c6ed2f77c082b7908c33e2ab208981d76c39.svg "Repobeats analytics image")
-
-### We couldn't have done this without you.
-
-<a href="https://github.com/makeplane/plane/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=makeplane/plane" />
-</a>
+- **Search scale:** ranking scans the whole project in Python, which is fine up to a few thousand work items. Beyond that, move to [pgvector](https://github.com/pgvector/pgvector) with an index.
+- **Search quality:** `bge-small` is small (about 70 MB) and struggles with very short titles; a larger model ranks better at about four times the size. The 0.1 best-match window would need retuning for a different model.
+- **First search after a bulk import** embeds every new item, so it's slower than later searches.
 
 ## License
 
-This project is licensed under the [GNU Affero General Public License v3.0](https://github.com/makeplane/plane/blob/master/LICENSE.txt).
+[AGPL-3.0](LICENSE.txt), the same as Plane. This is an independent extension and is not affiliated with Plane Software, Inc.
