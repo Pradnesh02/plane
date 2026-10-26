@@ -1,7 +1,7 @@
 """Tiny embedding service for Plane semantic search.
 
 POST /embed {"texts": [...], "query": false} -> {"vectors": [[...], ...]}
-"query": true applies the model's search-query instruction (use it for the user's search text).
+"query": true prefixes bge's retrieval instruction (use it for the user's search text).
 """
 
 import json
@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from fastembed import TextEmbedding
 
 MODEL = "BAAI/bge-small-en-v1.5"  # 384 dims, ~70 MB, CPU only
+QUERY_PREFIX = "Represent this sentence for searching relevant passages: "  # from the bge model card
 model = TextEmbedding(MODEL)
 
 
@@ -25,8 +26,9 @@ class Handler(BaseHTTPRequestHandler):
             texts = [str(t) for t in body["texts"]]
         except (ValueError, KeyError, TypeError):
             return self._send(400, {"error": 'expected {"texts": [...]}'})
-        embed = model.query_embed if body.get("query") else model.embed
-        self._send(200, {"vectors": [v.tolist() for v in embed(texts)]})
+        if body.get("query"):  # fastembed's query_embed doesn't add the prefix for this model
+            texts = [QUERY_PREFIX + t for t in texts]
+        self._send(200, {"vectors": [v.tolist() for v in model.embed(texts)]})
 
     def _send(self, code, payload):
         data = json.dumps(payload).encode()
