@@ -16,7 +16,7 @@ export interface ContentWrapperProps {
 export function ContentWrapper({ className, children }: ContentWrapperProps) {
   return (
     <div className="h-full w-full overflow-hidden">
-      <div className={cn("relative h-full w-full overflow-x-hidden overflow-y-scroll", className)}>{children}</div>
+      <div className={cn("fx-page relative h-full w-full overflow-x-hidden overflow-y-scroll", className)}>{children}</div>
     </div>
   );
 }

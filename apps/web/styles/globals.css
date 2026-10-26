@@ -223,7 +223,7 @@
 }
 
 .worklog-in {
-  animation: worklogIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: worklogIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 
 .worklog-pop {
@@ -242,5 +242,227 @@
   }
   .worklog-bar {
     transition: none;
+  }
+}
+
+/* ---------- Fonts: Geist (OFL-1.1, vendored from @fontsource-variable 5.3.0) ---------- */
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../app/assets/fonts/geist-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@font-face {
+  font-family: "Geist Mono Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../app/assets/fonts/geist-mono-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+/* ---------- Motion layer (fx-*): ambient glow, page entrances, 3D cards ---------- */
+:root {
+  --fx-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --fx-brand: var(--bg-accent-primary);
+}
+
+/* slow aurora behind the whole app */
+.fx-shell::before {
+  content: "";
+  position: fixed;
+  inset: -25%;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 32% at 18% 12%, color-mix(in srgb, var(--fx-brand) 16%, transparent), transparent 70%),
+    radial-gradient(32% 28% at 88% 88%, color-mix(in srgb, #a855f7 12%, transparent), transparent 70%);
+  filter: blur(48px);
+  animation: fxAurora 22s ease-in-out infinite alternate;
+}
+
+@keyframes fxAurora {
+  to {
+    transform: translate3d(6%, 4%, 0) rotate(8deg) scale(1.08);
+  }
+}
+
+/* soft glow at the top of every page, and pages rise in on navigation */
+.fx-page {
+  isolation: isolate;
+}
+
+.fx-page::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: -260px;
+  width: min(900px, 90%);
+  height: 520px;
+  translate: -50% 0;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--fx-brand) 26%, transparent), transparent);
+  animation: fxBreathe 9s var(--fx-ease) infinite alternate;
+}
+
+.fx-page > * {
+  animation: fxRise 480ms var(--fx-ease) backwards;
+}
+
+/* page roots repeat the panel's surface colour, which would hide the glow */
+.fx-page > .bg-surface-1 {
+  background-color: transparent;
+}
+
+@keyframes fxBreathe {
+  from {
+    opacity: 0.6;
+    scale: 0.92;
+  }
+  to {
+    opacity: 1;
+    scale: 1.08;
+  }
+}
+
+@keyframes fxRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* children enter one after another */
+.fx-stagger > * {
+  animation: fxRise 560ms var(--fx-ease) backwards;
+}
+.fx-stagger > :nth-child(2) { animation-delay: 70ms; }
+.fx-stagger > :nth-child(3) { animation-delay: 140ms; }
+.fx-stagger > :nth-child(4) { animation-delay: 210ms; }
+.fx-stagger > :nth-child(5) { animation-delay: 280ms; }
+.fx-stagger > :nth-child(6) { animation-delay: 350ms; }
+.fx-stagger > :nth-child(n + 7) { animation-delay: 420ms; }
+
+/* animated gradient headline */
+.fx-greeting {
+  background: linear-gradient(100deg, var(--txt-primary) 20%, var(--fx-brand) 45%, #a855f7 55%, var(--txt-primary) 80%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    fxRise 600ms var(--fx-ease) both,
+    fxShimmer 9s linear 600ms infinite;
+}
+
+@keyframes fxShimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* 3D tilt + light glare; --fx-rx/--fx-ry/--fx-gx/--fx-gy are set by helpers/fx.ts */
+.fx-card {
+  position: relative;
+  transition:
+    transform 450ms var(--fx-ease),
+    box-shadow 450ms var(--fx-ease),
+    border-color 300ms;
+}
+
+.fx-card:hover {
+  transform: perspective(900px) rotateX(var(--fx-rx, 0deg)) rotateY(var(--fx-ry, 0deg)) translateY(-3px);
+  box-shadow: 0 22px 44px -22px color-mix(in srgb, var(--fx-brand) 55%, transparent);
+  border-color: color-mix(in srgb, var(--fx-brand) 35%, transparent);
+}
+
+.fx-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms;
+  background: radial-gradient(
+    340px circle at var(--fx-gx, 50%) var(--fx-gy, 50%),
+    rgb(255 255 255 / 0.1),
+    transparent 45%
+  );
+}
+
+.fx-card:hover::after {
+  opacity: 1;
+}
+
+/* sidebar items slide, the active one gets a glowing marker */
+.fx-nav {
+  transition:
+    transform 200ms var(--fx-ease),
+    background-color 200ms;
+}
+
+.fx-nav:hover {
+  transform: translateX(3px);
+}
+
+.fx-nav-active::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 22%;
+  bottom: 22%;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--fx-brand);
+  box-shadow: 0 0 10px var(--fx-brand);
+  animation: fxGrow 300ms var(--fx-ease) both;
+}
+
+@keyframes fxGrow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* primary buttons glow on hover and press in */
+button.bg-accent-primary,
+a.bg-accent-primary {
+  transition:
+    transform 150ms var(--fx-ease),
+    box-shadow 250ms var(--fx-ease),
+    background-color 200ms;
+}
+
+button.bg-accent-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--fx-brand) 70%, transparent);
+}
+
+button.bg-accent-primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-shell::before,
+  .fx-page::before,
+  .fx-page > *,
+  .fx-stagger > *,
+  .fx-greeting,
+  .fx-nav-active::before {
+    animation: none;
+  }
+  .fx-card:hover,
+  .fx-nav:hover,
+  button.bg-accent-primary:active:not(:disabled) {
+    transform: none;
   }
 }

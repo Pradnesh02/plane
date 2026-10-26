@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import Script from "next/script";
 import { Links, Meta, Outlet, Scripts } from "react-router";
@@ -34,6 +35,9 @@ import "@fontsource-variable/inter";
 import interVariableWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import "@fontsource/material-symbols-rounded";
 import "@fontsource/ibm-plex-mono";
+import geistVariableWoff2 from "@/app/assets/fonts/geist-latin-wght-normal.woff2?url";
+// motion layer
+import { initFx } from "@/helpers/fx";
 
 const APP_TITLE = "Plane | Simple, extensible, open-source project management tool.";
 
@@ -50,6 +54,13 @@ export const links: LinksFunction = () => [
   {
     rel: "preload",
     href: interVariableWoff2,
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
+  },
+  {
+    rel: "preload",
+    href: geistVariableWoff2,
     as: "font",
     type: "font/woff2",
     crossOrigin: "anonymous",
@@ -123,9 +134,12 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export default function Root() {
+  useEffect(() => initFx(), []);
   return (
     <AppProvider>
-      <div className={cn("relative flex h-screen w-full flex-col overflow-hidden bg-canvas", "desktop-app-container")}>
+      <div
+        className={cn("relative flex h-screen w-full flex-col overflow-hidden bg-canvas", "desktop-app-container fx-shell")}
+      >
         <main className="relative h-full w-full overflow-hidden">
           <Outlet />
         </main>

@@ -98,7 +98,7 @@ export const ProjectTimesheetRoot = observer(function ProjectTimesheetRoot(props
         {stats.map((stat, index) => (
           <div
             key={`${range.start_date}-${stat.label}`}
-            className="worklog-in rounded-lg border-[0.5px] border-subtle-1 bg-layer-2 px-4 py-3"
+            className="worklog-in fx-card rounded-lg border-[0.5px] border-subtle-1 bg-layer-2 px-4 py-3"
             style={{ animationDelay: `${index * 40}ms` }}
           >
             <div className="text-caption-md-medium uppercase tracking-wide text-tertiary">{stat.label}</div>

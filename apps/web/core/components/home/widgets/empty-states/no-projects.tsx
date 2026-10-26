@@ -149,11 +149,11 @@ export const NoProjectsEmptyState = observer(function NoProjectsEmptyState() {
           {t("home.empty.not_right_now")}
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="fx-stagger grid grid-cols-1 gap-4 md:grid-cols-2">
         {EMPTY_STATE_DATA.map((item) => {
           const isStateComplete = isComplete(item.flag);
           return (
-            <div key={item.id} className="flex flex-col rounded-xl border border-subtle bg-layer-2 p-4">
+            <div key={item.id} className="fx-card flex flex-col rounded-xl border border-subtle bg-layer-2 p-4">
               <div
                 className={cn("mb-3 grid size-9 place-items-center rounded-full bg-surface-2 text-placeholder", {
                   "bg-accent-primary/10 text-accent-primary": !isStateComplete,
