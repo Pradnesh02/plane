@@ -91,6 +91,10 @@ You need Docker with Compose. From `deployments/cli/community`:
    ```
 5. Open http://localhost.
 
+### Share it publicly (optional)
+
+`bash tunnel.sh` (in `deployments/cli/community`) opens a free [Cloudflare quick tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) and prints a public `https://….trycloudflare.com` link. It also points `WEB_URL` at that link, because Plane redirects there after sign-in. The link works while the machine and Plane are running, and changes on every run. `bash tunnel.sh stop` goes back to localhost only. Consider turning off public sign-up (God mode → Authentication) before sharing a link.
+
 ## Tests
 
 - **API:** 16 contract tests, 12 for time tracking and 4 for search. The search tests swap in a fake embedder, so no model is needed. From the repo root:
