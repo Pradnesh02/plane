@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plane + Time Tracking</title>
-<meta name="description" content="Self-hosted project management built on open-source Plane, extended with native time tracking, per-person timesheets and a summary API.">
+<meta name="description" content="Self-hosted project management built on open-source Plane, extended with native time tracking, project timesheets and AI search that runs on your own server.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -226,6 +226,33 @@
   .entries .m { color: var(--ink-3); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @keyframes slideIn { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
 
+  /* ---------- timesheet + smart search ---------- */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .duo .card { display: flex; flex-direction: column; }
+  .demo { margin-top: 22px; flex: 1; display: flex; flex-direction: column; }
+  .week { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .week .lbl { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+  .week button { font: inherit; font-size: 13px; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); cursor: pointer; transition: transform .15s; }
+  .week button:active { transform: scale(.92); }
+  .ts { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: 12px; table-layout: fixed; }
+  .ts td, .ts th { white-space: nowrap; }
+  .ts th { font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--ink-3); padding-bottom: 2px; }
+  .ts th:first-child, .ts td:first-child { text-align: left; width: 22%; }
+  .ts th:last-child, .ts td:last-child { text-align: right; width: 16%; font-family: var(--mono); }
+  .ts td i { display: grid; place-items: center; height: 30px; border-radius: 6px; font-style: normal; font-family: var(--mono); font-size: 11px;
+    background: color-mix(in srgb, var(--accent) calc(var(--h, 0) * 1%), var(--bg-2)); color: var(--h-ink, var(--ink-3)); transition: background .6s var(--ease), color .4s; }
+  .ts tfoot td { color: var(--ink-3); padding-top: 4px; border-top: 1px solid var(--line); text-align: center; font-family: var(--mono); font-size: 11px; }
+  .ts tfoot td:last-child { color: var(--ink); font-weight: 500; }
+  .sbox { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid var(--accent); border-radius: 10px; background: var(--bg); font-size: 14px; box-shadow: 0 0 0 4px var(--accent-soft); }
+  .sbox svg { flex-shrink: 0; color: var(--accent); }
+  .sres { list-style: none; margin: 12px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; min-height: 188px; }
+  .sres li { display: grid; grid-template-columns: 52px 1fr 70px; gap: 10px; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 13px; animation: slideIn .5s var(--ease) both; }
+  .sres li:last-child { border-bottom: 0; }
+  .sres .id { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .sres .bar { height: 5px; border-radius: 3px; background: var(--bg-2); overflow: hidden; }
+  .sres .bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--accent); transition: width .8s var(--ease); }
+  .sres li.more { display: block; color: var(--ink-3); font-size: 12px; }
+
   /* ---------- live board ---------- */
   .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; perspective: 1400px; }
   .col { background: var(--bg-2); border-radius: 14px; padding: 12px; min-height: 290px; border: 1px solid var(--line); }
@@ -261,7 +288,7 @@
     .fact:nth-child(n+3) { border-top: 1px solid var(--line); }
     .bento { grid-template-columns: 1fr; }
     .c-2, .c-3, .c-4 { grid-column: auto; }
-    .tt, .host { grid-template-columns: 1fr; gap: 36px; }
+    .tt, .host, .duo { grid-template-columns: 1fr; gap: 36px; }
     .board { grid-template-columns: repeat(2, 1fr); }
     .shot-left, .shot-right { display: none; }
     .shot-main { left: 0; right: 0; }
@@ -271,6 +298,9 @@
   @media (max-width: 520px) {
     .board { grid-template-columns: 1fr; }
     .chip-done { display: none; }
+    .ts { border-spacing: 2px; }
+    .ts td i, .ts tfoot td { font-size: 9.5px; letter-spacing: -.04em; }
+    .ts th:first-child, .ts td:first-child { width: 17%; }
   }
 
   /* ---------- reduced motion ---------- */
@@ -289,6 +319,7 @@
     <nav class="nav-links" aria-label="Sections">
       <a href="#features">Features</a>
       <a href="#time">Time tracking</a>
+      <a href="#insights">Timesheet &amp; search</a>
       <a href="#board">Live board</a>
       <a href="#self-host">Self-host</a>
     </nav>
@@ -302,9 +333,9 @@
     <div class="hero-grid-bg" aria-hidden="true"></div>
     <div class="hero-glow" aria-hidden="true"></div>
     <div class="wrap hero-top">
-      <span class="pill"><b>NEW</b> Native time tracking for every work item</span>
+      <span class="pill"><b>NEW</b> Time tracking, timesheets and AI search</span>
       <h1 class="split" data-split>Plan the work. Track the <span class="serif">hours.</span> Ship.</h1>
-      <p class="lede">Self-hosted project management built on open-source Plane, now with time logs on every work item, per-person breakdowns and a timesheet API your team can report on.</p>
+      <p class="lede">Self-hosted project management built on open-source Plane, now with time logs on every work item, a weekly timesheet per project, and search that finds work by meaning.</p>
       <div class="cta">
         <a class="btn btn-primary" href="#self-host">Self-host in 2 minutes <span class="arrow" aria-hidden="true">→</span></a>
         <a class="btn" href="#time">See time tracking</a>
@@ -319,7 +350,7 @@
             <img src="assets/board.png" alt="Kanban board with work items grouped by state">
           </figure>
           <figure class="shot shot-left" style="margin:0">
-            <img src="assets/calendar.png" alt="Calendar layout showing work items on their due dates">
+            <img src="assets/timesheet.png" alt="Project timesheet with hours per person and day">
           </figure>
           <figure class="shot shot-right" style="margin:0">
             <img src="assets/time-tracking.png" alt="Time tracking popover on a work item with logged entries">
@@ -342,8 +373,8 @@
     <div class="wrap">
       <div class="facts reveal">
         <div class="fact"><div class="n mono" data-count="5">0</div><div class="l">Layouts: list, board, calendar, sheet, Gantt</div></div>
-        <div class="fact"><div class="n mono" data-count="12">0</div><div class="l">API tests for time tracking</div></div>
-        <div class="fact"><div class="n mono" data-count="4">0</div><div class="l">Endpoints: log, edit, delete, summary</div></div>
+        <div class="fact"><div class="n mono" data-count="16">0</div><div class="l">API tests for time tracking and search</div></div>
+        <div class="fact"><div class="n mono" data-count="5">0</div><div class="l">Endpoints: log, edit, delete, summary, search</div></div>
         <div class="fact"><div class="n mono">100%</div><div class="l">Self-hosted. Your data, your server</div></div>
       </div>
     </div>
@@ -451,6 +482,49 @@
     </div>
   </section>
 
+  <!-- ================= TIMESHEET + SMART SEARCH ================= -->
+  <section id="insights">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Also new</span>
+        <h2>See the <span class="serif">week.</span> Find anything.</h2>
+        <p>A timesheet for every project, and search that understands what you mean, not just what you typed.</p>
+      </div>
+      <div class="duo">
+        <article class="card reveal tilt" id="tsCard">
+          <div class="glare" aria-hidden="true"></div>
+          <h3>Timesheet</h3>
+          <p>Person by day for any week, shaded by hours, with daily totals and a breakdown by work item.</p>
+          <div class="demo">
+            <div class="week">
+              <button type="button" id="tsPrev" aria-label="Previous week">‹</button>
+              <span class="lbl" id="tsLabel" aria-live="polite"></span>
+              <button type="button" id="tsNext" aria-label="Next week">›</button>
+            </div>
+            <table class="ts" aria-label="Example timesheet">
+              <thead><tr><th>Person</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Total</th></tr></thead>
+              <tbody id="tsBody"></tbody>
+              <tfoot><tr id="tsFoot"></tr></tfoot>
+            </table>
+          </div>
+        </article>
+
+        <article class="card reveal tilt" id="srCard">
+          <div class="glare" aria-hidden="true"></div>
+          <h3>Smart search</h3>
+          <p>Describe it in your own words. A local AI model ranks work items by meaning, so “sluggish” finds “slow dashboard”.</p>
+          <div class="demo">
+            <div class="sbox" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"/></svg>
+              <span id="srTyped"></span><span class="caret"></span>
+            </div>
+            <ul class="sres" id="srList" aria-live="polite"></ul>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= LIVE BOARD ================= -->
   <section id="board">
     <div class="wrap">
@@ -474,16 +548,17 @@
       <div class="reveal">
         <span class="eyebrow">Self-host</span>
         <h2 style="margin-top:14px">Your server. <span class="serif">Your data.</span></h2>
-        <p style="color:var(--ink-2);font-size:18px;margin:16px 0 0;max-width:44ch">The whole stack (web, API, workers, Postgres, Redis, RabbitMQ and object storage) runs with one Docker Compose command. Migrations, including the new <span class="mono">issue_worklogs</span> table, apply on start.</p>
+        <p style="color:var(--ink-2);font-size:18px;margin:16px 0 0;max-width:44ch">The whole stack (web, API, workers, Postgres, Redis, RabbitMQ, object storage and a small CPU-only embedding model for search) runs with one Docker Compose command. No API keys: your work items never leave your server.</p>
       </div>
       <div class="term reveal">
         <div class="term-bar"><span>~/plane/deployments/cli/community</span><button class="copy" id="copyBtn" type="button">copy</button></div>
-<pre id="cmd"><span class="c"># start the stack with the time-tracking build</span>
+<pre id="cmd"><span class="c"># start the stack with time tracking and search</span>
 <span class="p">$</span> docker compose -p plane --env-file plane.env \
     -f docker-compose.yml -f docker-compose.local.yml up -d
 
 <span class="c"># migrations run automatically</span>
   Applying db.0126_issue_worklog... <span class="ok">OK</span>
+  Applying db.0127_issue_embedding... <span class="ok">OK</span>
 
 <span class="c"># open the app</span>
 <span class="p">$</span> open http://localhost</pre>
@@ -725,6 +800,83 @@
       moveCard(el, cols[ci + 1]);
     }, 2200);
   }
+
+  // timesheet demo: two example weeks, cells re-shade when switching
+  const weeks = [
+    { label: "Oct 19 – 23", rows: { You: [90, 120, 0, 135, 60], Aisha: [45, 60, 150, 30, 90], Marco: [0, 60, 45, 120, 0] } },
+    { label: "Oct 26 – 30", rows: { You: [60, 0, 90, 180, 45], Aisha: [120, 90, 0, 60, 30], Marco: [30, 45, 60, 0, 90] } },
+  ];
+  const tsBody = $("#tsBody"), tsFoot = $("#tsFoot");
+  const tsCells = Object.keys(weeks[0].rows).map((who) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td></td>" + "<td><i>·</i></td>".repeat(5) + "<td>0m</td>";
+    tr.firstChild.textContent = who;
+    tsBody.append(tr);
+    return tr;
+  });
+  tsFoot.innerHTML = "<td>Daily</td>" + "<td>·</td>".repeat(5) + "<td>0m</td>";
+  let wi = weeks.length - 1;
+  const showWeek = () => {
+    const w = weeks[wi], max = Math.max(...Object.values(w.rows).flat());
+    $("#tsLabel").textContent = w.label;
+    $("#tsPrev").disabled = wi === 0; $("#tsNext").disabled = wi === weeks.length - 1;
+    Object.values(w.rows).forEach((mins, r) => {
+      mins.forEach((m, d) => {
+        const cell = tsCells[r].children[d + 1].firstChild;
+        cell.style.transitionDelay = reduce ? "0ms" : `${(r * 5 + d) * 35}ms`;
+        cell.style.setProperty("--h", m ? 14 + (m / max) * 52 : 0);
+        cell.style.setProperty("--h-ink", m ? "var(--ink)" : "var(--ink-3)");
+        cell.textContent = m ? fmt(m) : "·";
+      });
+      tsCells[r].lastChild.textContent = fmt(mins.reduce((a, b) => a + b, 0));
+    });
+    const days = [0, 1, 2, 3, 4].map((d) => Object.values(w.rows).reduce((a, mins) => a + mins[d], 0));
+    days.forEach((m, d) => (tsFoot.children[d + 1].textContent = m ? fmt(m) : "·"));
+    tsFoot.lastChild.textContent = fmt(days.reduce((a, b) => a + b, 0));
+  };
+  $("#tsPrev").addEventListener("click", () => { if (wi > 0) { wi--; showWeek(); } });
+  $("#tsNext").addEventListener("click", () => { if (wi < weeks.length - 1) { wi++; showWeek(); } });
+  once.set($("#tsCard"), showWeek);
+
+  // smart search demo: real queries and scores from the local embedder, same 0.1 "best match" window as the app
+  const searches = [
+    ["the app feels sluggish", [[6, "Users report slow dashboard", .71], [2, "Fix navbar bug", .536], [1, "Design login page", .481], [3, "Write API docs", .476], [4, "Set up password reset", .444], [5, "Add login form validation", .389]]],
+    ["users can't log in", [[1, "Design login page", .603], [6, "Users report slow dashboard", .56], [4, "Set up password reset", .558], [5, "Add login form validation", .532], [2, "Fix navbar bug", .51], [3, "Write API docs", .43]]],
+    ["we need documentation for developers", [[3, "Write API docs", .679], [1, "Design login page", .581], [6, "Users report slow dashboard", .537], [5, "Add login form validation", .504], [2, "Fix navbar bug", .498], [4, "Set up password reset", .495]]],
+    ["top menu looks broken on phones", [[2, "Fix navbar bug", .611], [1, "Design login page", .54], [6, "Users report slow dashboard", .501], [4, "Set up password reset", .479], [5, "Add login form validation", .44], [3, "Write API docs", .398]]],
+  ];
+  const srTyped = $("#srTyped"), srList = $("#srList");
+  const showResults = (rows) => {
+    const best = rows[0][2], worst = rows[rows.length - 1][2];
+    const strong = rows.filter((r) => r[2] >= best - 0.1);
+    srList.innerHTML = "";
+    strong.forEach(([seq, name, score], i) => {
+      const li = document.createElement("li");
+      li.style.animationDelay = `${i * 60}ms`;
+      li.innerHTML = '<span class="id"></span><span></span><span class="bar"><i></i></span>';
+      li.children[0].textContent = `WEB-${seq}`; li.children[1].textContent = name;
+      srList.append(li);
+      requestAnimationFrame(() => requestAnimationFrame(() => (li.querySelector("i").style.width = `${12 + ((score - worst) / (best - worst)) * 88}%`)));
+    });
+    const more = document.createElement("li");
+    more.style.animationDelay = `${strong.length * 60}ms`;
+    more.className = "more";
+    more.textContent = `Show ${rows.length - strong.length} weaker matches`;
+    srList.append(more);
+  };
+  once.set($("#srCard"), async () => {
+    if (reduce) { srTyped.textContent = searches[0][0]; showResults(searches[0][1]); return; }
+    for (let n = 0; ; n = (n + 1) % searches.length) {
+      const [q, rows] = searches[n];
+      for (const ch of q) { srTyped.textContent += ch; await sleep(45 + Math.random() * 40); }
+      await sleep(250);
+      showResults(rows);
+      await sleep(3200);
+      srList.innerHTML = "";
+      while (srTyped.textContent.length) { srTyped.textContent = srTyped.textContent.slice(0, -1); await sleep(12); }
+      await sleep(250);
+    }
+  });
 
   // copy command
   $("#copyBtn").addEventListener("click", async () => {
