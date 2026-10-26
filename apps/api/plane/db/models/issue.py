@@ -403,6 +403,18 @@ class IssueWorkLog(ProjectBaseModel):
         return f"{self.issue.name} {self.duration}m"
 
 
+class IssueEmbedding(models.Model):
+    """Cached text embedding of a work item for semantic search. `content_hash` is the hash of
+    the text that was embedded, so a changed title or description gets re-embedded."""
+
+    issue = models.OneToOneField("db.Issue", on_delete=models.CASCADE, primary_key=True, related_name="embedding")
+    content_hash = models.CharField(max_length=64)
+    vector = models.JSONField()
+
+    class Meta:
+        db_table = "issue_embeddings"
+
+
 def get_upload_path(instance, filename):
     filename = sanitize_filename(filename) or uuid4().hex
     return f"{instance.workspace.id}/{uuid4().hex}-{filename}"

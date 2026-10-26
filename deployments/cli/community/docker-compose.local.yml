@@ -1,5 +1,6 @@
 # Run Plane with locally built images:
 #   backend  -> built from ../plane      (branch feature/time-tracking)
+#   embedder -> built from apps/embedder (semantic search model, CPU only)
 #   frontend -> built from ../plane-v142 (branch feature/time-tracking-v1.4.2, release v1.4.2 + time tracking)
 #   docker compose -p plane --env-file plane.env -f docker-compose.yml -f docker-compose.local.yml up -d
 services:
@@ -7,9 +8,14 @@ services:
     image: plane-frontend:v142
   api:
     image: plane-backend:local
+    environment:
+      EMBEDDER_URL: http://embedder:8000
   worker:
     image: plane-backend:local
   beat-worker:
     image: plane-backend:local
   migrator:
     image: plane-backend:local
+  embedder:
+    image: plane-embedder:local
+    restart: unless-stopped

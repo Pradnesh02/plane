@@ -11,6 +11,7 @@ from plane.app.views import (
     IssueLinkViewSet,
     IssueWorkLogViewSet,
     ProjectWorkLogSummaryEndpoint,
+    ProjectIssueSemanticSearchEndpoint,
     IssueAttachmentEndpoint,
     CommentReactionViewSet,
     IssueActivityEndpoint,
@@ -122,6 +123,11 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/worklogs/summary/",
         ProjectWorkLogSummaryEndpoint.as_view(),
         name="project-worklog-summary",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/semantic-search/",
+        ProjectIssueSemanticSearchEndpoint.as_view(),
+        name="project-issue-semantic-search",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/issue-links/",
