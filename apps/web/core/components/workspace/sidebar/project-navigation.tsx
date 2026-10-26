@@ -6,7 +6,7 @@
 
 import React, { useCallback, useMemo } from "react";
 import { observer } from "mobx-react";
-import { Clock } from "lucide-react";
+import { Clock, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { EUserPermissionsLevel, EUserPermissions } from "@plane/constants";
@@ -140,6 +140,16 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
         access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
         shouldRender: true,
         sortOrder: 7,
+      },
+      {
+        i18n_key: "sidebar.semantic_search",
+        key: "semantic_search",
+        name: "Smart search",
+        href: `/${workspaceSlug}/projects/${projectId}/semantic-search`,
+        icon: Sparkles,
+        access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
+        shouldRender: true,
+        sortOrder: 8,
       },
     ],
     [project]

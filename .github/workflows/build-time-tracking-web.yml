@@ -2,7 +2,7 @@ name: Build web image (time tracking)
 
 on:
   push:
-    branches: [feature/time-tracking-v1.4.2]
+    branches: [feature/time-tracking-v1.4.2, feature/semantic-search-v1.4.2]
   workflow_dispatch:
 
 permissions:
@@ -43,8 +43,8 @@ jobs:
       - name: Check time tracking UI is bundled
         run: |
           docker run --rm --entrypoint sh plane-frontend:v142 -c \
-            'grep -rl "work-item-worklog-trigger" /usr/share/nginx/html >/dev/null && grep -rl "timesheet-grid" /usr/share/nginx/html >/dev/null' \
-            || { echo "::error::Time tracking UI or timesheet page is missing from the web bundle"; exit 1; }
+            'grep -rl "work-item-worklog-trigger" /usr/share/nginx/html >/dev/null && grep -rl "timesheet-grid" /usr/share/nginx/html >/dev/null && grep -rl "semantic-search-input" /usr/share/nginx/html >/dev/null' \
+            || { echo "::error::Time tracking UI, timesheet or semantic search page is missing from the web bundle"; exit 1; }
 
       - name: Export image
         run: docker save plane-frontend:v142 | gzip -9 > plane-frontend-v142.tar.gz

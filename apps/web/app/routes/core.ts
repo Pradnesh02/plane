@@ -223,6 +223,13 @@ export const coreRoutes: RouteConfigEntry[] = [
               "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/timesheet/page.tsx"
             ),
           ]),
+          // Semantic search
+          layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/semantic-search/layout.tsx", [
+            route(
+              ":workspaceSlug/projects/:projectId/semantic-search",
+              "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/semantic-search/page.tsx"
+            ),
+          ]),
         ]),
 
         // Project Archives - Issues, Cycles, Modules
