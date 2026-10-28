@@ -35,6 +35,10 @@ A **Smart search** page in each project's menu. Describe what you're looking for
 
 ![Smart search](landing/assets/smart-search.png)
 
+### A livelier interface
+
+The web app uses the **Geist** font and a light motion layer: a slow ambient glow, pages and cards that animate in, 3D cards that tilt toward the cursor with a light glare, and sliding sidebar items with a glowing active marker. It's all plain CSS plus about 30 lines of TypeScript (`styles/globals.css`, `helpers/fx.ts`), and it turns off under the system's "reduce motion" setting.
+
 ## How it works
 
 ```mermaid
