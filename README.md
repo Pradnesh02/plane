@@ -8,7 +8,7 @@ A fork of [Plane](https://github.com/makeplane/plane), the open-source project m
 
 Everything is self-hosted. No API keys, and no data leaves the server.
 
-**[See the landing page →](https://claude.ai/artifact/DQr3vJ58W67btFhsTuTb1U)**
+**[▶ Watch the 1-minute demo](docs/demo.mp4)** · **[See the landing page →](https://claude.ai/artifact/DQr3vJ58W67btFhsTuTb1U)**
 
 > Looking for Plane itself? See the [upstream README](https://github.com/makeplane/plane#readme).
 
